@@ -67,7 +67,7 @@ config.cursor_blink_rate = 800
 
 -- 탭 바 위치 및 스타일
 config.use_fancy_tab_bar = false -- false로 해야 고전적인 탭 스타일(아래 colors 적용)이 잘 먹힘
-config.window_background_opacity = 0.90
+config.window_background_opacity = 0.95
 config.macos_window_background_blur = 50
 
 config.mouse_bindings = {
