@@ -1,0 +1,103 @@
+name: Ktlint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check:
+    name: Check Code Style
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Run ktlint check
+        id: ktlint
+        run: |
+          ./gradlew ktlintCheck --continue > ktlint.log 2>&1 || echo "failed=true" >> $GITHUB_OUTPUT
+
+      - name: Parse and comment violations
+        if: steps.ktlint.outputs.failed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const log = fs.readFileSync('ktlint.log', 'utf8');
+            
+            // 파일별로 에러 파싱
+            const violations = {};
+            const lines = log.split('\n');
+            
+            for (const line of lines) {
+              const match = line.match(/^(.+\.kt):(\d+):(\d+): (.+)$/);
+              if (match) {
+                const [, file, lineNum, col, message] = match;
+                if (!violations[file]) violations[file] = [];
+                violations[file].push({ line: lineNum, message });
+              }
+            }
+            
+            // PR 리뷰 코멘트 작성
+            const comments = [];
+            for (const [file, issues] of Object.entries(violations)) {
+              for (const issue of issues.slice(0, 10)) { // 파일당 최대 10개
+                comments.push({
+                  path: file,
+                  line: parseInt(issue.line),
+                  body: `**Ktlint**: ${issue.message}`
+                });
+              }
+            }
+            
+            if (comments.length > 0) {
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                event: 'REQUEST_CHANGES',
+                body: `## 🔍 Ktlint 검사 결과\n\n${comments.length}개의 스타일 이슈를 발견했습니다.\n\n아래 명령어로 자동 수정할 수 있습니다:\n\`\`\`bash\n./gradlew ktlintFormat\n\`\`\``,
+                comments: comments.slice(0, 50) // GitHub API 제한
+              });
+            }
+
+      - name: Fail if violations found
+        if: steps.ktlint.outputs.failed == 'true'
+        run: exit 1
+
+  # 선택적: auto-fix 버튼
+  fix:
+    name: Auto-fix (Manual Trigger)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Run ktlint format
+        run: ./gradlew ktlintFormat
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: apply ktlint auto-fixes"
