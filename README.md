@@ -42,6 +42,8 @@
 
 ### 💻 Wezterm
 
+[Wezterm 설치](https://wezterm.org/installation.html)
+
 ```shell
 cp .wezterm.lua ~
 ```
