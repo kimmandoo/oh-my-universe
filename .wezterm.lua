@@ -32,6 +32,7 @@ if wezterm.target_triple:find("windows") then
         {label = 'Windows PowerShell', args = {'powershell.exe', '-NoLogo'}},
         {label = 'Command Prompt (CMD)', args = {'cmd.exe'}}
     }
+    config.font_size = 11.0
 end
 
 local CMD = "CTRL"
@@ -42,6 +43,11 @@ if wezterm.target_triple:find("darwin") then
     -- 맥에서 Option 키를 눌렀을 때 특수 문자가 입력되지 않고 단축키로 작동하게 설정
     config.send_composed_key_when_left_alt_is_pressed = false
     config.send_composed_key_when_right_alt_is_pressed = false
+
+    -- 맥 초기 창 크기 설정
+    config.initial_cols = 110
+    config.initial_rows = 35
+    config.font_size = 13.0
 end
 
 -- ---------------------------------------------------------
@@ -51,7 +57,6 @@ end
 -- 폰트 설정
 config.line_height = 1.0
 config.font = wezterm.font('JetBrains Mono', {weight = 'Medium'})
-config.font_size = 11.0
 
 -- 색상 테마 'Catppuccin Mocha', 'Tokyo Night', 'Dracula', 'Nord', 'Gruvbox Dark'
 config.color_scheme = 'Tokyo Night'
@@ -68,7 +73,6 @@ config.cursor_blink_rate = 800
 -- 탭 바 위치 및 스타일
 config.use_fancy_tab_bar = false -- false로 해야 고전적인 탭 스타일(아래 colors 적용)이 잘 먹힘
 config.window_background_opacity = 0.95
-config.macos_window_background_blur = 50
 
 config.mouse_bindings = {
     -- 드래그해서 선택을 마치면(Left Up) -> 자동으로 클립보드에 복사
